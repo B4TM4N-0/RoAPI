@@ -1,5 +1,3 @@
-const axios = require('axios');
-
 export default async function handler(req, res) {
     const { userId } = req.query;
 
@@ -12,12 +10,12 @@ export default async function handler(req, res) {
         const premiumUrl = `https://premiumfeatures.roblox.com/v1/users/${userId}/validate-membership`;
 
         const [userRes, premiumRes] = await Promise.all([
-            axios.get(userUrl),
-            axios.get(premiumUrl, { responseType: "text" })
+            fetch(userUrl),
+            fetch(premiumUrl)
         ]);
 
-        const userData = userRes.data;
-        const isPremium = premiumRes.data === true || premiumRes.data === "true";
+        const userData = await userRes.json();
+        const premiumText = await premiumRes.text();
 
         return res.status(200).json({
             userId: userData.id,
@@ -26,12 +24,10 @@ export default async function handler(req, res) {
             description: userData.description || "",
             created: userData.created || null,
             hasVerifiedBadge: userData.hasVerifiedBadge === true,
-            hasPremium: isPremium
+            hasPremium: premiumText === "true"
         });
 
-    } catch (error) {
-        return res.status(error.response?.status || 500).json({
-            error: "Proxy Error"
-        });
+    } catch {
+        return res.status(500).json({ error: "Proxy Error" });
     }
 }
